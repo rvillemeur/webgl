@@ -1,0 +1,54 @@
+{
+  "name": "webgl",
+  "version": "1.0.0",
+  "description": "personnal implementation from tutorial site https://webgl2fundamentals.org:w",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha --require @babel/register",
+    "build": "webpack --progress --mode=production",
+    "dev": "webpack --progress --mode=development",
+    "watch": "webpack --progress --watch",
+    "server": "webpack-dev-server --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rvillemeur/webgl.git"
+  },
+  "keywords": [
+    "webgl",
+    "javascript",
+    "experiment",
+    "module"
+  ],
+  "author": "Renaud de Villemeur",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rvillemeur/webgl/issues"
+  },
+  "homepage": "https://github.com/rvillemeur/wegbl#readme",
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "@babel/node": "^7.2.2",
+    "@babel/preset-env": "^7.3.1",
+    "babel-loader": "^8.0.5",
+    "chai": "^4.2.0",
+    "jsdom": "^13.2.0",
+    "mocha": "^5.2.0",
+    "standard": "^12.0.1",
+    "webpack": "^4.29.0",
+    "webpack-cli": "^3.2.1",
+    "webpack-dev-server": "^3.1.14"
+  },
+  "dependencies": {},
+  "nyc": {
+    "include": [
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "/",
+      "dist/",
+      "test/**",
+      "test{,-*}.js"
+    ]
+  }
+}
