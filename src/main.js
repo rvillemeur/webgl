@@ -86,10 +86,15 @@ async function drawScene () {
   gl.uniform2fv(translationLocation, translation)
 
   // Set the rotation.
-  const angleInRadians = 180 * Math.PI / 180
+  const angleInRadians = 45 * Math.PI / 180
   const rotation = [Math.sin(angleInRadians), Math.cos(angleInRadians)]
   const rotationLocation = gl.getUniformLocation(program, 'u_rotation')
   gl.uniform2fv(rotationLocation, rotation)
+
+  // Set the scale
+  const scale = [0.5, 0.5]
+  const scaleLocation = gl.getUniformLocation(program, 'u_scale')
+  gl.uniform2fv(scaleLocation, scale)
 
   const primitiveType = gl.TRIANGLES
   gl.drawArrays(primitiveType, offset, scene.numberOfVertices)
