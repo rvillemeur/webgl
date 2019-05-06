@@ -4,16 +4,20 @@
 // It will receive data from a buffer
 in vec2 a_position;
 
-// Used to pass in the resolution of the canvas
 uniform vec2 u_resolution;
-
-// translation to add to position
 uniform vec2 u_translation;
+uniform vec2 u_rotation;
+
 
 // all shaders have a main function
 void main() {
+  //rotate the position
+  vec2 rotatedPosition = vec2(
+     a_position.x * u_rotation.y + a_position.y * u_rotation.x,
+     a_position.y * u_rotation.y - a_position.x * u_rotation.x);
+
   // Add in the translation
-  vec2 position = a_position + u_translation;
+  vec2 position = rotatedPosition + u_translation;
 
   // convert the position from pixels to 0.0 to 1.0
   vec2 zeroToOne = position / u_resolution;
