@@ -82,34 +82,26 @@ async function drawScene () {
   gl.uniform4fv(colorLocation, color)
 
   // Compute the matrices
-  const angleInRadians = 45 * Math.PI / 180
+  const angleInRadians = 75 * Math.PI / 180
   const scale = [0.75, 0.75]
-  const translation = [120, 175]
+  const translation = [100, 100]
   const translationMatrix = m3.translation(translation[0], translation[1])
   const rotationMatrix = m3.rotation(angleInRadians)
   const scaleMatrix = m3.scaling(scale[0], scale[1])
 
-  // Starting Matrix.
-  var matrix = m3.identity()
+  // make a matrix that will move the origin of the 'F' to its center.
+  const moveOriginMatrix = m3.translation(-50, -75)
 
-  for (var i = 0; i < 5; ++i) {
-    // Multiply the matrices.
-    matrix = m3.multiply(matrix, translationMatrix)
-    matrix = m3.multiply(matrix, rotationMatrix)
-    matrix = m3.multiply(matrix, scaleMatrix)
+  var matrix = m3.multiply(translationMatrix, rotationMatrix)
+  matrix = m3.multiply(matrix, scaleMatrix)
+  matrix = m3.multiply(matrix, moveOriginMatrix)
 
-    // Set the matrix.
-    const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
-    gl.uniformMatrix3fv(matrixLocation, false, matrix)
+  // Set the matrix.
+  const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
+  gl.uniformMatrix3fv(matrixLocation, false, matrix)
 
-    // Set a random color.
-    const color = [Math.random(), Math.random(), Math.random(), 1]
-    const colorLocation = gl.getUniformLocation(program, 'u_color')
-    gl.uniform4fv(colorLocation, color)
-
-    const primitiveType = gl.TRIANGLES
-    gl.drawArrays(primitiveType, offset, scene.numberOfVertices)
-  }
+  const primitiveType = gl.TRIANGLES
+  gl.drawArrays(primitiveType, offset, scene.numberOfVertices)
 }
 
 addEvent(window, 'load', drawScene)
