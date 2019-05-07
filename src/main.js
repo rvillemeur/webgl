@@ -67,11 +67,6 @@ async function drawScene () {
   // Bind the attribute/buffer set we want.
   gl.bindVertexArray(vao)
 
-  // Pass in the canvas resolution so we can convert from
-  // pixels to clipspace in the shader
-  const resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution')
-  gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
-
   const scene = await loadScene('public\\scene\\f_letter.json')
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scene.vertices), gl.STATIC_DRAW)
@@ -82,9 +77,10 @@ async function drawScene () {
   gl.uniform4fv(colorLocation, color)
 
   // Compute the matrices
-  const angleInRadians = 75 * Math.PI / 180
+  const angleInRadians = 185 * Math.PI / 180
   const scale = [0.75, 0.75]
   const translation = [100, 100]
+  const projectionMatrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight)
   const translationMatrix = m3.translation(translation[0], translation[1])
   const rotationMatrix = m3.rotation(angleInRadians)
   const scaleMatrix = m3.scaling(scale[0], scale[1])
@@ -92,8 +88,9 @@ async function drawScene () {
   // make a matrix that will move the origin of the 'F' to its center.
   const moveOriginMatrix = m3.translation(-50, -75)
 
-  var matrix = m3.multiply(translationMatrix, rotationMatrix)
+  var matrix = m3.multiply(projectionMatrix, translationMatrix)
   matrix = m3.multiply(matrix, scaleMatrix)
+  matrix = m3.multiply(matrix, rotationMatrix)
   matrix = m3.multiply(matrix, moveOriginMatrix)
 
   // Set the matrix.
