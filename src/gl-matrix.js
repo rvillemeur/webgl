@@ -53,6 +53,13 @@ const m3 = {
       0, sy, 0,
       0, 0, 1
     ]
+  },
+  identity: function () {
+    return [
+      1, 0, 0,
+      0, 1, 0,
+      0, 0, 1
+    ]
   }
 }
 
