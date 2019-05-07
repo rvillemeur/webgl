@@ -1,5 +1,6 @@
 import addEvent from './common.js'
 import { createShader, createProgram, loadShader, loadScene } from './gl-utils.js'
+import { m3 } from './gl-matrix.js'
 
 function resize (canvas) {
   var cssToRealPixels = window.devicePixelRatio || 1
@@ -80,21 +81,21 @@ async function drawScene () {
   const colorLocation = gl.getUniformLocation(program, 'u_color')
   gl.uniform4fv(colorLocation, color)
 
-  // Set the translation
-  const translation = [120, 175]
-  const translationLocation = gl.getUniformLocation(program, 'u_translation')
-  gl.uniform2fv(translationLocation, translation)
-
-  // Set the rotation.
-  const angleInRadians = 45 * Math.PI / 180
-  const rotation = [Math.sin(angleInRadians), Math.cos(angleInRadians)]
-  const rotationLocation = gl.getUniformLocation(program, 'u_rotation')
-  gl.uniform2fv(rotationLocation, rotation)
-
-  // Set the scale
+  // Compute the matrices
+  const angleInRadians = 75 * Math.PI / 180
   const scale = [0.5, 0.5]
-  const scaleLocation = gl.getUniformLocation(program, 'u_scale')
-  gl.uniform2fv(scaleLocation, scale)
+  const translation = [120, 175]
+  const translationMatrix = m3.translation(translation[0], translation[1])
+  const rotationMatrix = m3.rotation(angleInRadians)
+  const scaleMatrix = m3.scaling(scale[0], scale[1])
+
+  // Multiply the matrices.
+  var matrix = m3.multiply(translationMatrix, rotationMatrix)
+  matrix = m3.multiply(matrix, scaleMatrix)
+
+  // Set the matrix.
+  const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
+  gl.uniformMatrix3fv(matrixLocation, false, matrix)
 
   const primitiveType = gl.TRIANGLES
   gl.drawArrays(primitiveType, offset, scene.numberOfVertices)
