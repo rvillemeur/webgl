@@ -79,19 +79,12 @@ async function drawScene () {
   // Compute the matrices
   const angleInRadians = 185 * Math.PI / 180
   const scale = [0.75, 0.75]
-  const translation = [100, 100]
-  const projectionMatrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight)
-  const translationMatrix = m3.translation(translation[0], translation[1])
-  const rotationMatrix = m3.rotation(angleInRadians)
-  const scaleMatrix = m3.scaling(scale[0], scale[1])
+  const translation = [200, 200]
 
-  // make a matrix that will move the origin of the 'F' to its center.
-  const moveOriginMatrix = m3.translation(-50, -75)
-
-  var matrix = m3.multiply(projectionMatrix, translationMatrix)
-  matrix = m3.multiply(matrix, scaleMatrix)
-  matrix = m3.multiply(matrix, rotationMatrix)
-  matrix = m3.multiply(matrix, moveOriginMatrix)
+  var matrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight)
+  matrix = m3.translate(matrix, translation[0], translation[1])
+  matrix = m3.rotate(matrix, angleInRadians)
+  matrix = m3.scale(matrix, scale[0], scale[1])
 
   // Set the matrix.
   const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
