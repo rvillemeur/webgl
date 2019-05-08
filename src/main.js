@@ -1,6 +1,6 @@
 import addEvent from './common.js'
 import { createShader, createProgram, loadShader, loadScene } from './gl-utils.js'
-import { m3 } from './gl-matrix.js'
+import { glMatrix, vec2, mat3 } from 'gl-matrix'
 
 function resize (canvas) {
   var cssToRealPixels = window.devicePixelRatio || 1
@@ -77,14 +77,15 @@ async function drawScene () {
   gl.uniform4fv(colorLocation, color)
 
   // Compute the matrices
-  const angleInRadians = 185 * Math.PI / 180
-  const scale = [0.75, 0.75]
-  const translation = [200, 200]
+  const rotation = glMatrix.toRadian(185)
+  const scale = vec2.fromValues(0.75, 0.75)
+  const translation = vec2.fromValues(200, 200)
 
-  var matrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight)
-  matrix = m3.translate(matrix, translation[0], translation[1])
-  matrix = m3.rotate(matrix, angleInRadians)
-  matrix = m3.scale(matrix, scale[0], scale[1])
+  const matrix = mat3.create()
+  mat3.projection(matrix, gl.canvas.clientWidth, gl.canvas.clientHeight)
+  mat3.translate(matrix, matrix, translation)
+  mat3.rotate(matrix, matrix, rotation)
+  mat3.scale(matrix, matrix, scale)
 
   // Set the matrix.
   const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
