@@ -1,6 +1,6 @@
 import addEvent from './common.js'
 import { createShader, createProgram, loadShader, loadScene } from './gl-utils.js'
-import { glMatrix, vec2, mat3 } from 'gl-matrix'
+import { glMatrix, vec3, mat4 } from 'gl-matrix'
 
 function resize (canvas) {
   var cssToRealPixels = window.devicePixelRatio || 1
@@ -26,9 +26,13 @@ async function drawScene () {
   if (!gl) {
     window.alert('Webgl is not available in your browser')
   }
+
   resize(gl.canvas)
   // Tell WebGL how to convert from clip space to pixels
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.clearColor(0.9, 0.9, 0, 0.5)
+  // gl.enable(gl.CULL_FACE)
+  gl.enable(gl.DEPTH_TEST)
 
   const [vertexShaderSource, fragmentShaderSource] = await Promise.all([
     loadShader('public\\shader\\vertex\\shader.vert'),
@@ -38,61 +42,48 @@ async function drawScene () {
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
   const program = createProgram(gl, vertexShader, fragmentShader)
+  gl.useProgram(program)
 
+  const scene = await loadScene('public\\scene\\f_letter_3d.json')
+
+  // load position
   const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
   const positionBuffer = gl.createBuffer()
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-
-  const vao = gl.createVertexArray()
-  gl.bindVertexArray(vao)
   gl.enableVertexAttribArray(positionAttributeLocation)
-
-  // 2 components per iteration
-  const size = 2
-  // the data is 32bit floats
-  const type = gl.FLOAT
-  // don't normalize the data
-  const normalize = false
-  // 0 = move forward size * sizeof(type) each iteration to get the next position
-  const stride = 0
-  // start at the beginning of the buffer
-  const offset = 0
-  gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 0)
-  gl.clear(gl.COLOR_BUFFER_BIT)
-  // Tell it to use our program (pair of shaders)
-  gl.useProgram(program)
-  // Bind the attribute/buffer set we want.
-  gl.bindVertexArray(vao)
-
-  const scene = await loadScene('public\\scene\\f_letter.json')
-
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scene.vertices), gl.STATIC_DRAW)
+  gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0)
 
   // Set a random color.
-  const color = [Math.random(), Math.random(), Math.random(), 1]
-  const colorLocation = gl.getUniformLocation(program, 'u_color')
-  gl.uniform4fv(colorLocation, color)
+  // const color = [Math.random(), Math.random(), Math.random(), 1]
+  const colorAttributeLocation = gl.getAttribLocation(program, 'a_color')
+  const colorBuffer = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(scene.colors), gl.STATIC_DRAW)
+  gl.enableVertexAttribArray(colorAttributeLocation)
+  gl.vertexAttribPointer(colorAttributeLocation, 3, gl.UNSIGNED_BYTE, true, 0, 0)
 
   // Compute the matrices
-  const rotation = glMatrix.toRadian(185)
-  const scale = vec2.fromValues(0.75, 0.75)
-  const translation = vec2.fromValues(200, 200)
+  const rotationX = glMatrix.toRadian(215)
+  const rotationY = glMatrix.toRadian(0)
+  const rotationZ = glMatrix.toRadian(25)
+  const scale = vec3.fromValues(1, 1, 1)
+  const translation = vec3.fromValues(150, 180, 0)
 
-  const matrix = mat3.create()
-  mat3.projection(matrix, gl.canvas.clientWidth, gl.canvas.clientHeight)
-  mat3.translate(matrix, matrix, translation)
-  mat3.rotate(matrix, matrix, rotation)
-  mat3.scale(matrix, matrix, scale)
+  const matrix = mat4.create()
+  mat4.ortho(matrix, 0, gl.canvas.clientWidth, 0, gl.canvas.clientHeight, 400, -400)
+  mat4.translate(matrix, matrix, translation)
+  mat4.rotateX(matrix, matrix, rotationX)
+  mat4.rotateY(matrix, matrix, rotationY)
+  mat4.rotateZ(matrix, matrix, rotationZ)
+  mat4.scale(matrix, matrix, scale)
 
   // Set the matrix.
   const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
-  gl.uniformMatrix3fv(matrixLocation, false, matrix)
+  gl.uniformMatrix4fv(matrixLocation, false, matrix)
 
-  const primitiveType = gl.TRIANGLES
-  gl.drawArrays(primitiveType, offset, scene.numberOfVertices)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  gl.drawArrays(gl.TRIANGLES, 0, scene.numberOfVertices)
 }
 
 addEvent(window, 'load', drawScene)
