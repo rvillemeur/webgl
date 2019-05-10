@@ -20,20 +20,7 @@ function resize (canvas) {
   }
 }
 
-async function drawScene () {
-  const canvas = document.getElementById('c')
-  const gl = canvas.getContext('webgl2')
-  if (!gl) {
-    window.alert('Webgl is not available in your browser')
-  }
-
-  resize(gl.canvas)
-  // Tell WebGL how to convert from clip space to pixels
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-  gl.clearColor(0.9, 0.9, 0, 0.5)
-  // gl.enable(gl.CULL_FACE)
-  gl.enable(gl.DEPTH_TEST)
-
+async function setProgram (gl) {
   const [vertexShaderSource, fragmentShaderSource] = await Promise.all([
     loadShader('public\\shader\\vertex\\shader.vert'),
     loadShader('public\\shader\\fragment\\fragment.frag')
@@ -43,17 +30,19 @@ async function drawScene () {
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
   const program = createProgram(gl, vertexShader, fragmentShader)
   gl.useProgram(program)
+  return program
+}
 
-  const scene = await loadScene('public\\scene\\f_letter_3d.json')
-
-  // load position
+function loadPosition (gl, program, scene) {
   const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
   const positionBuffer = gl.createBuffer()
   gl.enableVertexAttribArray(positionAttributeLocation)
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scene.vertices), gl.STATIC_DRAW)
   gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0)
+}
 
+function loadColor (gl, program, scene) {
   // Set a random color.
   // const color = [Math.random(), Math.random(), Math.random(), 1]
   const colorAttributeLocation = gl.getAttribLocation(program, 'a_color')
@@ -62,7 +51,9 @@ async function drawScene () {
   gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(scene.colors), gl.STATIC_DRAW)
   gl.enableVertexAttribArray(colorAttributeLocation)
   gl.vertexAttribPointer(colorAttributeLocation, 3, gl.UNSIGNED_BYTE, true, 0, 0)
+}
 
+function computeMatrix (gl, program) {
   // Compute the matrices
   const rotationX = glMatrix.toRadian(215)
   const rotationY = glMatrix.toRadian(0)
@@ -81,9 +72,41 @@ async function drawScene () {
   // Set the matrix.
   const matrixLocation = gl.getUniformLocation(program, 'u_matrix')
   gl.uniformMatrix4fv(matrixLocation, false, matrix)
+}
+
+async function getVertexArrayObjet (gl) {
+  const vao = gl.createVertexArray()
+  gl.bindVertexArray(vao)
+
+  const program = await setProgram(gl)
+  const scene = await loadScene('public\\scene\\f_letter_3d.json')
+
+  loadPosition(gl, program, scene)
+  loadColor(gl, program, scene)
+  computeMatrix(gl, program)
+
+  gl.bindVertexArray(null)
+  return vao
+}
+
+async function drawScene () {
+  const canvas = document.getElementById('c')
+  const gl = canvas.getContext('webgl2')
+  if (!gl) {
+    window.alert('Webgl is not available in your browser')
+  }
+
+  const vao = await getVertexArrayObjet(gl)
+  gl.bindVertexArray(vao)
+
+  resize(gl.canvas)
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.clearColor(0.9, 0.9, 0, 0.5)
+  // gl.enable(gl.CULL_FACE)
+  gl.enable(gl.DEPTH_TEST)
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-  gl.drawArrays(gl.TRIANGLES, 0, scene.numberOfVertices)
+  gl.drawArrays(gl.TRIANGLES, 0, 96)
 }
 
 addEvent(window, 'load', drawScene)
