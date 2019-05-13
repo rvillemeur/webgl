@@ -1,4 +1,5 @@
 import { createShader, createProgram, loadShader, loadScene } from './gl-utils.js'
+import addEvent from './common.js'
 import { glMatrix, vec3, mat4 } from 'gl-matrix'
 
 const fshape = Object.assign(Object.create(Object.prototype), {
@@ -19,6 +20,7 @@ const fshape = Object.assign(Object.create(Object.prototype), {
       canvas.height = displayHeight
     }
   },
+
   drawScene: async function drawScene (now) {
     // Convert the time to seconds
     now *= 0.001
@@ -40,6 +42,7 @@ const fshape = Object.assign(Object.create(Object.prototype), {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 96)
     window.requestAnimationFrame(this.drawScene.bind(this))
   },
+
   loadPosition: function loadPosition (gl, program, scene) {
     const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
     const positionBuffer = gl.createBuffer()
@@ -48,16 +51,47 @@ const fshape = Object.assign(Object.create(Object.prototype), {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scene.vertices), gl.STATIC_DRAW)
     gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0)
   },
-  loadColor: function loadColor (gl, program, scene) {
-    // Set a random color.
-    // const color = [Math.random(), Math.random(), Math.random(), 1]
-    const colorAttributeLocation = gl.getAttribLocation(program, 'a_color')
-    const colorBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(scene.colors), gl.STATIC_DRAW)
-    gl.enableVertexAttribArray(colorAttributeLocation)
-    gl.vertexAttribPointer(colorAttributeLocation, 3, gl.UNSIGNED_BYTE, true, 0, 0)
+
+  loadImage: async function loadImage (url, image) {
+    try {
+      const response = await window.fetch(url)
+      const blob = await response.blob()
+      const objectURL = URL.createObjectURL(blob)
+      image.src = objectURL
+    } catch (e) {
+      return e.message
+    }
   },
+
+  loadTexture: async function loadTexture (gl, program, scene) {
+    const textureAttributeLocation = gl.getAttribLocation(program, 'a_texcoord')
+    const texcoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scene.textures), gl.STATIC_DRAW)
+    gl.enableVertexAttribArray(textureAttributeLocation)
+    gl.vertexAttribPointer(textureAttributeLocation, 2, gl.FLOAT, true, 0, 0)
+
+    var image = new Image()
+    image.src = 'public\\img\\f-texture.png'
+    addEvent(image, 'load', () => {
+      const texture = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      gl.generateMipmap(gl.TEXTURE_2D)
+    })
+  },
+
+  // loadColor: function loadColor (gl, program, scene) {
+  //   // Set a random color.
+  //   // const color = [Math.random(), Math.random(), Math.random(), 1]
+  //   const colorAttributeLocation = gl.getAttribLocation(program, 'a_color')
+  //   const colorBuffer = gl.createBuffer()
+  //   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+  //   gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(scene.colors), gl.STATIC_DRAW)
+  //   gl.enableVertexAttribArray(colorAttributeLocation)
+  //   gl.vertexAttribPointer(colorAttributeLocation, 3, gl.UNSIGNED_BYTE, true, 0, 0)
+  // },
+
   computeMatrix: function computeMatrix (gl, program, deltaTime) {
     // console.log(pos)
     // Compute the matrices
@@ -88,61 +122,67 @@ const fshape = Object.assign(Object.create(Object.prototype), {
     gl.useProgram(program)
     return program
   },
+
   getVertexArrayObjet: async function getVertexArrayObjet (gl, deltaTime) {
     const vao = gl.createVertexArray()
     gl.bindVertexArray(vao)
 
     const program = await this.setProgram(gl)
-    const scene = await loadScene('public\\scene\\f_letter_3d.json')
 
-    this.loadPosition(gl, program, scene)
-    this.loadColor(gl, program, scene)
+    this.loadPosition(gl, program, this.scene)
+    // this.loadColor(gl, program, this.scene)
+    await this.loadTexture(gl, program, this.scene)
     this.computeMatrix(gl, program, deltaTime)
 
     gl.bindVertexArray(null)
     return vao
   },
 
-  initialize: function initialize (gl) {
+  initialize: async function initialize (gl) {
     this.gl = gl
+    this.scene = await loadScene('public\\scene\\f_letter_3d.json')
     return this
   },
   create: function create (value) {
     var self = Object.create(this)
 
-    Object.defineProperty(self, 'gl', {
-      value: null,
-      writable: true
-    })
-
-    Object.defineProperty(self, 'then', {
-      value: 0,
-      writable: true
-    })
-
-    Object.defineProperty(self, 'rotationSpeed', {
-      value: 1.2,
-      writable: false
-    })
-    Object.defineProperty(self, 'rotationX', {
-      value: glMatrix.toRadian(180),
-      writable: true
-    })
-    Object.defineProperty(self, 'rotationY', {
-      value: glMatrix.toRadian(60),
-      writable: true
-    })
-    Object.defineProperty(self, 'rotationZ', {
-      value: glMatrix.toRadian(25),
-      writable: false
-    })
-    Object.defineProperty(self, 'scale', {
-      value: vec3.fromValues(1, 1, 1),
-      writable: false
-    })
-    Object.defineProperty(self, 'translation', {
-      value: vec3.fromValues(150, 180, 0),
-      writable: false
+    Object.defineProperties(self, {
+      'gl': {
+        value: null,
+        writable: true
+      },
+      'scene': {
+        value: null,
+        writable: true
+      },
+      'then': {
+        value: 0,
+        writable: true
+      },
+      'rotationSpeed': {
+        value: 1.2,
+        writable: false
+      },
+      'rotationX': {
+        value: glMatrix.toRadian(180),
+        writable: true
+      },
+      'rotationY': {
+        value: glMatrix.toRadian(60),
+        writable: true
+      },
+      'rotationZ': {
+        value: glMatrix.toRadian(25),
+        writable: false
+      },
+      'scale': {
+        value: vec3.fromValues(1, 1, 1),
+        writable: false
+      },
+      'translation': {
+        value: vec3.fromValues(150, 180, 0),
+        writable: false
+      }
     })
 
     return self

@@ -52,5 +52,8 @@
       "test/**",
       "test{,-*}.js"
     ]
+  },
+  "standard": {
+    "globals": [ "Image" ]
   }
 }
